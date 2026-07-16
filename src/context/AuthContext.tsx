@@ -7,7 +7,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  avatar?: string; // URL ou nome do ícone
+  avatar?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   setAvatar: (avatar: string) => void;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Carregar usuário do localStorage ao iniciar
   useEffect(() => {
     const storedUser = localStorage.getItem("reelhub_user");
     if (storedUser) {
@@ -37,6 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+  // Função centralizada para salvar usuário (estado + localStorage)
+  const saveUser = (newUser: User) => {
+    setUser(newUser);
+    localStorage.setItem("reelhub_user", JSON.stringify(newUser));
+  };
+
+  // Login
   const login = async (email: string, password: string): Promise<boolean> => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -47,8 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: email,
             avatar: "",
           };
-          setUser(newUser);
-          localStorage.setItem("reelhub_user", JSON.stringify(newUser));
+          saveUser(newUser);
           resolve(true);
         } else {
           resolve(false);
@@ -57,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Cadastro
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -67,8 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: email,
             avatar: "",
           };
-          setUser(newUser);
-          localStorage.setItem("reelhub_user", JSON.stringify(newUser));
+          saveUser(newUser);
           resolve(true);
         } else {
           resolve(false);
@@ -77,21 +85,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem("reelhub_user");
   };
 
+  // Atualizar avatar
   const setAvatar = (avatar: string) => {
     if (user) {
       const updatedUser = { ...user, avatar };
-      setUser(updatedUser);
-      localStorage.setItem("reelhub_user", JSON.stringify(updatedUser));
+      saveUser(updatedUser);
+    }
+  };
+
+  // Atualizar dados do usuário (nome, email, etc.)
+  const updateUser = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      saveUser(updatedUser);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, setAvatar }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        setAvatar,
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

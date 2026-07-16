@@ -17,12 +17,18 @@ import {
   Tv,
   List,
   LogIn,
+  UserCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSearch } from "@/src/context/SearchContext";
 import { useAuth } from "@/src/context/AuthContext";
+
+const getInitialsAvatar = (name: string) => {
+  const initials = name.split(" ").map(n => n[0]).join("");
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=random&color=fff&size=128&bold=true`;
+};
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -199,10 +205,13 @@ export function Header() {
               </AnimatePresence>
             </div>
 
-            {/* Link "Entrar" / "Sair" */}
+            {/* Entrar/Sair (desktop) */}
             {user ? (
               <button
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                }}
                 className="hidden md:flex items-center gap-2 text-gray-300 hover:text-white transition text-sm font-medium"
               >
                 <LogOut size={18} />
@@ -218,16 +227,29 @@ export function Header() {
               </Link>
             )}
 
-            {/* Perfil */}
+            {/* Perfil (desktop) */}
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-1 text-gray-300 hover:text-white transition"
                 aria-label="Perfil"
               >
-                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden text-xl">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
                   {user?.avatar ? (
-                    <span>{user.avatar}</span>
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = getInitialsAvatar(user.name);
+                      }}
+                    />
+                  ) : user?.name ? (
+                    <img
+                      src={getInitialsAvatar(user.name)}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <User size={16} className="text-white" />
                   )}
@@ -247,41 +269,74 @@ export function Header() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-3 w-48 bg-black/95 border border-gray-700 rounded-md shadow-2xl py-2 z-50"
+                    className="absolute right-0 mt-3 w-52 bg-black/95 border border-gray-700 rounded-md shadow-2xl py-2 z-50"
                   >
-                    <div className="px-4 py-2 border-b border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-lg">
-                          {user?.avatar ? <span>{user.avatar}</span> : <User size={14} className="text-white" />}
+                    <div className="px-4 py-3 border-b border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt="Avatar"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = getInitialsAvatar(user.name);
+                              }}
+                            />
+                          ) : user?.name ? (
+                            <img
+                              src={getInitialsAvatar(user.name)}
+                              alt="Avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User size={20} className="text-white" />
+                          )}
                         </div>
-                        <div>
+                        <div className="flex flex-col">
                           <p className="text-sm text-white font-medium">{user?.name || "Usuário"}</p>
-                          <p className="text-xs text-gray-400">{user?.email || "usuario@email.com"}</p>
+                          <p className="text-xs text-gray-400 truncate max-w-[140px]">{user?.email || "usuario@email.com"}</p>
                         </div>
                       </div>
                     </div>
-                    <ul className="text-sm text-gray-300">
-                      <li className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition">
-                        <User size={16} /> Meu Perfil
-                      </li>
-                      <li className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition">
-                        <Heart size={16} /> Minha Lista
-                      </li>
-                      <li className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition">
-                        <Settings size={16} /> Configurações
-                      </li>
-                      {user && (
-                        <li
-                          onClick={() => {
-                            logout();
-                            setIsProfileOpen(false);
-                            router.push("/login");
-                          }}
-                          className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition border-t border-gray-700 mt-1 pt-2 text-red-500"
+                    <ul className="text-sm text-gray-300 py-1">
+                      <li>
+                        <Link
+                          href="/perfil"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition"
                         >
-                          <LogOut size={16} /> Sair
-                        </li>
-                      )}
+                          <UserCircle size={16} /> Meu Perfil
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/minha-lista"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition"
+                        >
+                          <Heart size={16} /> Minha Lista
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/configuracoes"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition"
+                        >
+                          <Settings size={16} /> Configurações
+                        </Link>
+                      </li>
+                      <li
+                        onClick={() => {
+                          logout();
+                          setIsProfileOpen(false);
+                          router.push("/login");
+                        }}
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition border-t border-gray-700 mt-1 pt-2 text-red-500"
+                      >
+                        <LogOut size={16} /> Sair
+                      </li>
                     </ul>
                   </motion.div>
                 )}
@@ -291,7 +346,7 @@ export function Header() {
         </div>
       </motion.header>
 
-      {/* ===== SIDEBAR ===== */}
+      {/* ===== SIDEBAR (MOBILE) – APENAS "CONFIGURAÇÕES" NO FINAL ===== */}
       <AnimatePresence>
         {isSidebarOpen && (
           <>
@@ -310,6 +365,7 @@ export function Header() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed top-0 left-0 h-full w-64 bg-black/95 border-r border-gray-800 z-50 md:hidden flex flex-col shadow-2xl"
             >
+              {/* Cabeçalho da sidebar */}
               <div className="flex items-center justify-between p-4 border-b border-gray-800">
                 <div className="relative w-[100px] h-[35px]">
                   <Image
@@ -328,6 +384,8 @@ export function Header() {
                   <X size={26} />
                 </button>
               </div>
+
+              {/* Navegação principal */}
               <nav className="flex-1 py-4">
                 <ul className="space-y-1">
                   {navLinks.map((link) => {
@@ -356,35 +414,80 @@ export function Header() {
                       </li>
                     );
                   })}
-                  {/* Link Entrar/Sair na sidebar */}
-                  {user ? (
-                    <li>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setIsSidebarOpen(false);
-                          router.push("/login");
-                        }}
-                        className="flex items-center gap-4 px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-white/5 transition w-full text-left"
-                      >
-                        <LogOut size={20} className="text-gray-400" />
-                        Sair
-                      </button>
-                    </li>
-                  ) : (
-                    <li>
-                      <Link
-                        href="/login"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="flex items-center gap-4 px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-white/5 transition"
-                      >
-                        <LogIn size={20} className="text-gray-400" />
-                        Entrar
-                      </Link>
-                    </li>
-                  )}
                 </ul>
+
+                {/* Rodapé da sidebar: apenas Configurações + Sair (se logado) */}
+                <div className="border-t border-gray-700 mt-4 pt-4">
+                  {user ? (
+                    <>
+                      {/* Avatar e nome do usuário */}
+                      <div className="px-4 py-2 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt="Avatar"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = getInitialsAvatar(user.name);
+                              }}
+                            />
+                          ) : user?.name ? (
+                            <img
+                              src={getInitialsAvatar(user.name)}
+                              alt="Avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User size={16} className="text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">{user.name}</p>
+                          <p className="text-xs text-gray-400 truncate w-32">{user.email}</p>
+                        </div>
+                      </div>
+
+                      {/* Apenas Configurações + Sair */}
+                      <ul className="space-y-1">
+                        <li>
+                          <Link
+                            href="/configuracoes"
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="flex items-center gap-4 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition"
+                          >
+                            <Settings size={18} className="text-gray-400" />
+                            Configurações
+                          </Link>
+                        </li>
+                        <li>
+                          <button
+                            onClick={() => {
+                              logout();
+                              setIsSidebarOpen(false);
+                              router.push("/login");
+                            }}
+                            className="flex items-center gap-4 px-4 py-2 text-sm text-red-500 hover:text-red-400 hover:bg-white/5 transition w-full text-left"
+                          >
+                            <LogOut size={18} className="text-red-400" />
+                            Sair
+                          </button>
+                        </li>
+                      </ul>
+                    </>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="flex items-center gap-4 px-4 py-3 text-base text-gray-300 hover:text-white hover:bg-white/5 transition"
+                    >
+                      <LogIn size={20} className="text-gray-400" />
+                      Entrar
+                    </Link>
+                  )}
+                </div>
               </nav>
+
               <div className="border-t border-gray-800 p-4 text-xs text-gray-500">
                 <p>© 2026 ReelHub v1.0</p>
               </div>
